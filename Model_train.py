@@ -32,8 +32,8 @@ autoencoder.compile(optimizer='adam', loss='mse')
 print(autoencoder.summary())
 
 # Data loading
-data_load_address = './data'
-mat = h5py.File(data_load_address+'/Hdata.mat', 'r')
+data_load_address = './drive/My Drive'
+mat = h5py.File(data_load_address+'/H_train.mat', 'r')
 data = np.transpose(mat['H_train'])      # shape=(320000, 1024)
 data = data.astype('float32')
 data = np.reshape(data, [len(data), img_channels, img_height, img_width])
