@@ -91,18 +91,64 @@ class DeuantizationLayer(tf.keras.layers.Layer):
         base_config['B'] = self.B
         return base_config
 
-
-
 def Encoder(x,feedback_bits):
     B=4
     with tf.compat.v1.variable_scope('Encoder'):
+        x = layers.Conv2D(256, 9, padding = 'SAME', strides=(4, 4))(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.PReLU()(x)
+        x = layers.Conv2D(256, 5, padding = 'SAME', strides=(2, 2))(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.PReLU()(x)
+        x = layers.Conv2D(8, 9, padding = 'SAME', strides=(4, 4))(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.PReLU()(x)
+        x = layers.Flatten()(x)
+        x = layers.Dense(units=int(feedback_bits/B), activation='sigmoid')(x)
+        encoder_output = QuantizationLayer(B)(x)
+    return encoder_output
+
+def Encoder_baseline(x,feedback_bits):
+    B=4
+    with tf.compat.v1.variable_scope('Encoder'):
+        x = layers.Conv2D(2, 3, padding = 'SAME',activation="relu")(x)
         x = layers.Conv2D(2, 3, padding = 'SAME',activation="relu")(x)
         x = layers.Conv2D(2, 3, padding = 'SAME',activation="relu")(x)
         x = layers.Flatten()(x)
         x = layers.Dense(units=int(feedback_bits/B), activation='sigmoid')(x)
         encoder_output = QuantizationLayer(B)(x)
     return encoder_output
+
+
 def Decoder(x,feedback_bits):
+    B=4
+    decoder_input = DeuantizationLayer(B)(x)
+    x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(decoder_input)
+   
+        x = layers.Conv2DTranspose(256, 5, padding = 'SAME', strides=(2, 2))(x)
+        x = layers.BatchNormalization()(x)
+        x_ini = layers.PReLU()(x)
+        x_tmp = layers.PReLU()(x)
+    
+    for i in range(2):
+        x = layers.Conv2D(256, 5, padding = 'SAME')(x_ini)
+        x = layers.BatchNormalization()(x)
+        x = layers.PReLU()(x)
+        x = layers.Conv2D(256, 5, padding = 'SAME')(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.PReLU()(x)
+        x_ini = keras.layers.Add()([x_ini, x])
+        
+    x_ini = keras.layers.Add()([x_ini, x_tmp])
+    
+    x = layers.Conv2DTranspose(256, 5, padding = 'SAME', strides=(2, 2))(x_ini)
+    x = layers.BatchNormalization()(x)
+    x = layers.PReLU()(x)
+    decoder_output = layers.Conv2DTranspose(2, 9, padding = 'SAME', strides=(4, 4))(x)
+
+    return decoder_output
+
+def Decoder_baseline(x,feedback_bits):
     B=4
     decoder_input = DeuantizationLayer(B)(x)
     x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(decoder_input)
