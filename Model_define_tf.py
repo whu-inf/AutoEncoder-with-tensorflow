@@ -100,12 +100,13 @@ def Encoder(x,feedback_bits):
         x = layers.Conv2D(256, 5, padding = 'SAME', strides=(2, 2))(x)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
-        x = layers.Conv2D(8, 9, padding = 'SAME', strides=(4, 4))(x)
+        x = layers.Conv2D(8, 5, padding = 'SAME', strides=(2, 2))(x)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
-        x = layers.Flatten()(x)
-        x = layers.Dense(units=int(feedback_bits/B), activation='sigmoid')(x)
-        encoder_output = QuantizationLayer(B)(x)
+        #x = layers.Flatten()(x)
+        #x = layers.Dense(units=int(feedback_bits/B), activation='sigmoid')(x)
+        encoder_output = x
+        #encoder_output = QuantizationLayer(B)(x)
     return encoder_output
 
 def Encoder_baseline(x,feedback_bits):
@@ -122,13 +123,15 @@ def Encoder_baseline(x,feedback_bits):
 
 def Decoder(x,feedback_bits):
     B=4
-    decoder_input = DeuantizationLayer(B)(x)
-    x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(decoder_input)
-   
-        x = layers.Conv2DTranspose(256, 5, padding = 'SAME', strides=(2, 2))(x)
-        x = layers.BatchNormalization()(x)
-        x_ini = layers.PReLU()(x)
-        x_tmp = layers.PReLU()(x)
+    #decoder_input = DeuantizationLayer(B)(x)
+    #decoder_input = x
+    #x = tf.keras.layers.Reshape((-1,int(feedback_bits/B)))(decoder_input)
+    
+    x = layers.UpSampling2D(size=(2,2))(x)
+    x = layers.Conv2D(256, 5, padding = 'SAME')(x)
+    x = layers.BatchNormalization()(x)
+    x_ini = layers.PReLU()(x)
+    x_tmp = layers.PReLU()(x)
     
     for i in range(2):
         x = layers.Conv2D(256, 5, padding = 'SAME')(x_ini)
@@ -141,10 +144,12 @@ def Decoder(x,feedback_bits):
         
     x_ini = keras.layers.Add()([x_ini, x_tmp])
     
-    x = layers.Conv2DTranspose(256, 5, padding = 'SAME', strides=(2, 2))(x_ini)
+    x = layers.UpSampling2D(size=(2,2))(x)
+    x = layers.Conv2D(256, 5, padding = 'SAME')(x)
     x = layers.BatchNormalization()(x)
     x = layers.PReLU()(x)
-    decoder_output = layers.Conv2DTranspose(2, 9, padding = 'SAME', strides=(4, 4))(x)
+    x = layers.UpSampling2D(size=(4,4))(x)
+    decoder_output = layers.Conv2D(2, 9, padding = 'SAME')(x)
 
     return decoder_output
 
