@@ -11,6 +11,7 @@ feedback_bits = 128
 img_height = 16
 img_width = 32
 img_channels = 2
+tf.random.set_seed(323)
 
 # Model construction
 # encoder model
@@ -40,9 +41,16 @@ data = np.reshape(data, [len(data), img_channels, img_height, img_width])
 data = np.transpose(data, (0, 2, 3, 1))   # change to data_form: 'channel_last'
 x_train, x_test = sklearn.model_selection.train_test_split(data, test_size=0.05, random_state=1)
 
+#lr scheduler
+def lr_scheduler(epoch, lr):
+  if epoch < 20:
+    return lr
+  else:
+    return lr * (1+tf.math.cos((epoch-20)*pi/80))
+lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
 
 # model training
-autoencoder.fit(x=x_train, y=x_train, batch_size=512, epochs=1000, validation_split=0.1)
+autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=100, callbacks=[lr_callback], verbose=1, validation_split=0.1)
 
 # model save
 # save encoder
