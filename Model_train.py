@@ -74,7 +74,7 @@ class CustomCallback(keras.callbacks.Callback):
     
 
 # model training
-autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=50, callbacks=[CustomCallback(),
+autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=100, callbacks=[CustomCallback(),
         CustomLearningRateScheduler(lr_scheduler),], verbose=1, validation_split=0.1)
 
 # model save
