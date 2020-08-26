@@ -62,9 +62,9 @@ class CustomLearningRateScheduler(keras.callbacks.Callback):
 #lr scheduler
 def lr_scheduler(epoch, lr):
   if epoch < 20:
-    return lr * (1+(epoch/20))
+    return 1e-3 * (1+(epoch/10))
   else:
-    return lr * (1+tf.math.cos((epoch-20)*pi/80))
+    return 1.5e-3 *(1+tf.math.cos((epoch-20)*pi/80))
 
 class CustomCallback(keras.callbacks.Callback):
   def on_epoch_end(self, epoch, logs=None):
