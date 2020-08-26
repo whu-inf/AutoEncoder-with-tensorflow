@@ -1,6 +1,7 @@
 import numpy as np
 import h5py
 import tensorflow as tf
+import sklearn
 from tensorflow import keras
 from tensorflow.keras import layers
 from sklearn import model_selection
@@ -41,16 +42,40 @@ data = np.reshape(data, [len(data), img_channels, img_height, img_width])
 data = np.transpose(data, (0, 2, 3, 1))   # change to data_form: 'channel_last'
 x_train, x_test = sklearn.model_selection.train_test_split(data, test_size=0.05, random_state=1)
 
+class CustomLearningRateScheduler(keras.callbacks.Callback):
+
+    def __init__(self, schedule):
+        super(CustomLearningRateScheduler, self).__init__()
+        self.schedule = schedule
+
+    def on_epoch_begin(self, epoch, logs=None):
+        if not hasattr(self.model.optimizer, "lr"):
+            raise ValueError('Optimizer must have a "lr" attribute.')
+        # Get the current learning rate from model's optimizer.
+        lr = float(tf.keras.backend.get_value(self.model.optimizer.learning_rate))
+        # Call schedule function to get the scheduled learning rate.
+        scheduled_lr = self.schedule(epoch, lr)
+        # Set the value back to the optimizer before this epoch starts
+        tf.keras.backend.set_value(self.model.optimizer.lr, scheduled_lr)
+        print("\nEpoch %05d: Learning rate is %6.4f." % (epoch, scheduled_lr))
+
 #lr scheduler
 def lr_scheduler(epoch, lr):
   if epoch < 20:
-    return lr
+    return lr * (1+(epoch/20))
   else:
     return lr * (1+tf.math.cos((epoch-20)*pi/80))
-lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
+
+class CustomCallback(keras.callbacks.Callback):
+  def on_epoch_end(self, epoch, logs=None):
+    print('on_epoch_end() called')
+    y_test = autoencoder.predict(x_test, batch_size=512)
+    print('The NMSE is ' + np.str(NMSE(x_test, y_test)))
+    
 
 # model training
-autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=100, callbacks=[lr_callback], verbose=1, validation_split=0.1)
+autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=50, callbacks=[CustomCallback(),
+        CustomLearningRateScheduler(lr_scheduler),], verbose=1, validation_split=0.1)
 
 # model save
 # save encoder
@@ -63,9 +88,3 @@ decoder.save(modelsave2)
 # model test
 y_test = autoencoder.predict(x_test, batch_size=512)
 print('The NMSE is ' + np.str(NMSE(x_test, y_test)))
-
-
-
-
-
-
