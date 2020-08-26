@@ -2,6 +2,7 @@ import numpy as np
 import h5py
 import tensorflow as tf
 import sklearn
+import math
 from tensorflow import keras
 from tensorflow.keras import layers
 from sklearn import model_selection
@@ -57,20 +58,19 @@ class CustomLearningRateScheduler(keras.callbacks.Callback):
         scheduled_lr = self.schedule(epoch, lr)
         # Set the value back to the optimizer before this epoch starts
         tf.keras.backend.set_value(self.model.optimizer.lr, scheduled_lr)
-        print("\nEpoch %05d: Learning rate is %6.4f." % (epoch, scheduled_lr))
+        print("\nEpoch %04d Learning rate is %6.4f." % (epoch+1, scheduled_lr))
 
 #lr scheduler
 def lr_scheduler(epoch, lr):
   if epoch < 20:
     return 1e-3 * (1+(epoch/10))
   else:
-    return 1.5e-3 *(1+tf.math.cos((epoch-20)*pi/80))
+    return 1.5e-3 *(1+tf.math.cos((epoch-20)*math.pi/80))
 
 class CustomCallback(keras.callbacks.Callback):
   def on_epoch_end(self, epoch, logs=None):
-    print('on_epoch_end() called')
     y_test = autoencoder.predict(x_test, batch_size=512)
-    print('The NMSE is ' + np.str(NMSE(x_test, y_test)))
+    print('NMSE=' + np.str(NMSE(x_test, y_test)))
     
 
 # model training
