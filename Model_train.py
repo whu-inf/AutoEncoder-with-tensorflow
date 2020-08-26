@@ -59,23 +59,23 @@ class CustomLearningRateScheduler(keras.callbacks.Callback):
         # Set the value back to the optimizer before this epoch starts
         tf.keras.backend.set_value(self.model.optimizer.lr, scheduled_lr)
         print("\nEpoch %04d Learning rate is %6.4f." % (epoch+1, scheduled_lr))
+        
+    def on_epoch_end(self, epoch, logs=None):
+        y_test = autoencoder.predict(x_test, batch_size=1024)
+        print('NMSE=' + np.str(NMSE(x_test, y_test)))
 
 #lr scheduler
 def lr_scheduler(epoch, lr):
   if epoch < 20:
-    return 1e-3 * (1+(epoch/10))
+    return 1e-3 * (1+(epoch/5))
   else:
-    return 1.5e-3 *(1+tf.math.cos((epoch-20)*math.pi/80))
+    return 2.5e-3 *(1+tf.math.cos((epoch-20)*math.pi/180))
 
-class CustomCallback(keras.callbacks.Callback):
-  def on_epoch_end(self, epoch, logs=None):
-    y_test = autoencoder.predict(x_test, batch_size=512)
-    print('NMSE=' + np.str(NMSE(x_test, y_test)))
     
 
 # model training
-autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=100, callbacks=[CustomCallback(),
-        CustomLearningRateScheduler(lr_scheduler),], verbose=1, validation_split=0.1)
+autoencoder.fit(x=x_train, y=x_train, batch_size=1024, epochs=200, callbacks=[
+        CustomLearningRateScheduler(lr_scheduler)], verbose=1, validation_split=0.1)
 
 # model save
 # save encoder
