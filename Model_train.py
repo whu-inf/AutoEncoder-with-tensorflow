@@ -77,10 +77,12 @@ model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
     save_weights_only=True,
     monitor='val_loss',
     mode='min',
+    verbose=1,
+    save_freq='epoch',
     save_best_only=True)
 
 # model training
-autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=200, callbacks=[
+autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=200, callbacks=[model_checkpoint_callback,
         CustomLearningRateScheduler(lr_scheduler)], verbose=1, validation_split=0.1)
 
 # model save
