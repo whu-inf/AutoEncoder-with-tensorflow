@@ -126,6 +126,8 @@ def OffsetLayer(x,feedback_bits):
 def Decoder(x,feedback_bits):
     B=4
     
+    x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(x)
+    x = layers.Dense(1024, activation='sigmoid')(x)
     x = layers.Reshape((16, 32, 2))(x)
     x = layers.Conv2D(2, 7, padding = 'SAME',activation = 'sigmoid')(x)
     x_ini = layers.BatchNormalization()(x)
