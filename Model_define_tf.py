@@ -91,7 +91,7 @@ class DeuantizationLayer(tf.keras.layers.Layer):
         base_config['B'] = self.B
         return base_config
 
-num_of_feature = 16
+num_of_feature = 64
 
 def Encoder(x,feedback_bits):
     B=4
@@ -102,12 +102,11 @@ def Encoder(x,feedback_bits):
         x = layers.Conv2D(num_of_feature, 5, padding = 'SAME')(x)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
-        x = layers.Conv2D(num_of_feature, 5, padding = 'SAME', strides=(2, 2))(x)
+        x = layers.Conv2D(num_of_feature, 5, padding = 'SAME')(x)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
         x = layers.Flatten()(x)
         x = layers.Dense(units=int(feedback_bits/B), activation='sigmoid')(x)
-        #encoder_output = x
         encoder_output = QuantizationLayer(B)(x)
     return encoder_output
 
@@ -127,11 +126,12 @@ def Decoder(x,feedback_bits):
     B=4
     decoder_input = DeuantizationLayer(B)(x)
     x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(decoder_input)
-    x = layers.Dense(256, activation='sigmoid')(x)
-    x = layers.Reshape((8, 16, 2))(x)
+    x = layers.Dense(1024, activation='sigmoid')(x)
+    x = layers.Reshape((16, 32, 2))(x)
     
     #x = layers.UpSampling2D(size=(2,2))(x)
-    x = layers.Conv2DTranspose(num_of_feature, 5, padding = 'SAME', strides=(2, 2))(x)
+    #x = layers.Conv2DTranspose(num_of_feature, 5, padding = 'SAME', strides=(2, 2))(x)
+    x = layers.Conv2D(num_of_feature, 5, padding = 'SAME')(x)
     x = layers.BatchNormalization()(x)
     x_ini = layers.PReLU()(x)
     x_tmp = layers.PReLU()(x)
