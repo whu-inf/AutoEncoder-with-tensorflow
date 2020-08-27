@@ -62,7 +62,7 @@ class CustomLearningRateScheduler(keras.callbacks.Callback):
         
     def on_epoch_end(self, epoch, logs=None):
         y_test = autoencoder.predict(x_test, batch_size=256)
-        print('NMSE=' + np.str(NMSE(x_test, y_test)))
+        print('\t NMSE=' + np.str(NMSE(x_test, y_test)))
 
 #lr scheduler
 def lr_scheduler(epoch, lr):
@@ -71,13 +71,13 @@ def lr_scheduler(epoch, lr):
   else:
     return (1.25e-3)*(1/1.9) *(1+0.9*tf.math.cos((epoch-20)*math.pi/180))
 
-checkpoint_filepath = '/ckpt/checkpoint'
+checkpoint_filepath = './ckpt/checkpoint'
 model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
     filepath=checkpoint_filepath,
     save_weights_only=True,
     monitor='val_loss',
     mode='min',
-    verbose=1,
+    verbose=0,
     save_freq='epoch',
     save_best_only=True)
 
