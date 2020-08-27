@@ -71,7 +71,13 @@ def lr_scheduler(epoch, lr):
   else:
     return (1.25e-3)*(1/1.9) *(1+0.9*tf.math.cos((epoch-20)*math.pi/180))
 
-    
+checkpoint_filepath = '/ckpt/checkpoint'
+model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+    filepath=checkpoint_filepath,
+    save_weights_only=True,
+    monitor='val_loss',
+    mode='min',
+    save_best_only=True)
 
 # model training
 autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=200, callbacks=[
