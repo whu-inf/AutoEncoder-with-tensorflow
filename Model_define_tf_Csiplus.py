@@ -105,7 +105,7 @@ def Encoder(x,feedback_bits):
     encoder_output = QuantizationLayer(B)(x)
     return encoder_output
 
-def DequanLayer(x)
+def DequanLayer(x,feedback_bits):
     B = 4
     decoder_input = DeuantizationLayer(B)(x)
     x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(decoder_input)
