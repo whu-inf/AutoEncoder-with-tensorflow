@@ -61,20 +61,20 @@ class CustomLearningRateScheduler(keras.callbacks.Callback):
         print("\nEpoch %04d Learning rate is %6.4f." % (epoch+1, scheduled_lr))
         
     def on_epoch_end(self, epoch, logs=None):
-        y_test = autoencoder.predict(x_test, batch_size=1024)
+        y_test = autoencoder.predict(x_test, batch_size=256)
         print('NMSE=' + np.str(NMSE(x_test, y_test)))
 
 #lr scheduler
 def lr_scheduler(epoch, lr):
   if epoch < 20:
-    return 1e-3 * (1+(epoch/5))
+    return 1e-3 * (1+(epoch/20))
   else:
-    return 2.5e-3 *(1+tf.math.cos((epoch-20)*math.pi/180))
+    return 1e-3 *(1+tf.math.cos((epoch-20)*math.pi/180))
 
     
 
 # model training
-autoencoder.fit(x=x_train, y=x_train, batch_size=1024, epochs=200, callbacks=[
+autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=200, callbacks=[
         CustomLearningRateScheduler(lr_scheduler)], verbose=1, validation_split=0.1)
 
 # model save
@@ -86,5 +86,5 @@ modelsave2 = './Modelsave/decoder.h5'
 decoder.save(modelsave2)
 
 # model test
-y_test = autoencoder.predict(x_test, batch_size=512)
+y_test = autoencoder.predict(x_test, batch_size=256)
 print('The NMSE is ' + np.str(NMSE(x_test, y_test)))
