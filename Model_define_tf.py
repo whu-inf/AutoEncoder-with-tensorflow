@@ -91,12 +91,12 @@ class DeuantizationLayer(tf.keras.layers.Layer):
         base_config['B'] = self.B
         return base_config
 
-num_of_feature = 64
+num_of_feature = 16
 
 def Encoder(x,feedback_bits):
     B=4
     with tf.compat.v1.variable_scope('Encoder'):
-        x = layers.Conv2D(num_of_feature, 9, padding = 'SAME')(x)
+        x = layers.Conv2D(num_of_feature, 7, padding = 'SAME')(x)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
         x = layers.Conv2D(num_of_feature, 5, padding = 'SAME')(x)
@@ -145,14 +145,14 @@ def Decoder(x,feedback_bits):
         x = layers.PReLU()(x)
         x_ini = keras.layers.Add()([x_ini, x])
         
-    x_ini = keras.layers.Add()([x_ini, x_tmp])
+    x = keras.layers.Add()([x_ini, x_tmp])
     
     #x = layers.UpSampling2D(size=(2,2))(x)
     x = layers.Conv2D(num_of_feature, 5, padding = 'SAME')(x)
     x = layers.BatchNormalization()(x)
     x = layers.PReLU()(x)
     #x = layers.UpSampling2D(size=(4,4))(x)
-    decoder_output = layers.Conv2D(2, 9, padding = 'SAME')(x)
+    decoder_output = layers.Conv2D(2, 7, padding = 'SAME')(x)
 
     return decoder_output
 
