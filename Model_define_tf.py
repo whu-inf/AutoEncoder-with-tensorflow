@@ -91,18 +91,18 @@ class DeuantizationLayer(tf.keras.layers.Layer):
         base_config['B'] = self.B
         return base_config
 
-num_of_feature = 16
+conv_feature_size = 128
 
 def Encoder(x,feedback_bits):
     B=4
     with tf.compat.v1.variable_scope('Encoder'):
-        x = layers.Conv2D(num_of_feature, 9, padding = 'SAME')(x)
+        x = layers.Conv2D(conv_feature_size, 9, padding = 'SAME')(x)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
-        x = layers.Conv2D(num_of_feature, 5, padding = 'SAME')(x)
+        x = layers.Conv2D(conv_feature_size, 5, padding = 'SAME')(x)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
-        x = layers.Conv2D(num_of_feature, 5, padding = 'SAME')(x)
+        x = layers.Conv2D(conv_feature_size, 5, padding = 'SAME')(x)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
         x = layers.Flatten()(x)
@@ -126,21 +126,19 @@ def Decoder(x,feedback_bits):
     B=4
     decoder_input = DeuantizationLayer(B)(x)
     x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(decoder_input)
-    x = layers.Dense(1024, activation='sigmoid')(x)
+    x = layers.Dense(1024, activation='linear')(x)
     x = layers.Reshape((16, 32, 2))(x)
     
-    #x = layers.UpSampling2D(size=(2,2))(x)
-    #x = layers.Conv2DTranspose(num_of_feature, 5, padding = 'SAME', strides=(2, 2))(x)
-    x = layers.Conv2D(num_of_feature, 5, padding = 'SAME')(x)
+    x = layers.Conv2D(conv_feature_size, 5, padding = 'SAME')(x)
     x = layers.BatchNormalization()(x)
     x_ini = layers.PReLU()(x)
     x_tmp = layers.PReLU()(x)
     
     for i in range(2):
-        x = layers.Conv2D(num_of_feature, 5, padding = 'SAME')(x_ini)
+        x = layers.Conv2D(conv_feature_size, 5, padding = 'SAME')(x_ini)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
-        x = layers.Conv2D(num_of_feature, 5, padding = 'SAME')(x)
+        x = layers.Conv2D(conv_feature_size, 5, padding = 'SAME')(x)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
         x_ini = keras.layers.Add()([x_ini, x])
@@ -148,11 +146,11 @@ def Decoder(x,feedback_bits):
     x = keras.layers.Add()([x_ini, x_tmp])
     
     #x = layers.UpSampling2D(size=(2,2))(x)
-    x = layers.Conv2D(num_of_feature, 5, padding = 'SAME')(x)
+    x = layers.Conv2D(conv_feature_size, 5, padding = 'SAME')(x)
     x = layers.BatchNormalization()(x)
     x = layers.PReLU()(x)
     #x = layers.UpSampling2D(size=(4,4))(x)
-    decoder_output = layers.Conv2D(2, 9, padding = 'SAME')(x)
+    decoder_output = layers.Conv2D(2, 9, padding = 'SAME', activation='sigmoid')(x)
 
     return decoder_output
 
