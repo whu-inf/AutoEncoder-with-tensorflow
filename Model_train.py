@@ -6,7 +6,7 @@ import math
 from tensorflow import keras
 from tensorflow.keras import layers
 from sklearn import model_selection
-from Model_define_tf import Encoder, Decoder, NMSE, DequanLayer ,OffsetLayer
+from Model_define_tf import Encoder, Decoder, NMSE
 
 # parameters
 feedback_bits = 128
@@ -21,21 +21,15 @@ Encoder_input = keras.Input(shape=(img_height, img_width, img_channels), name="e
 Encoder_output = Encoder(Encoder_input, feedback_bits)
 encoder = keras.Model(inputs=Encoder_input, outputs=Encoder_output, name='encoder')
 
-# dequan model
-Dequan_input = keras.Input(shape=(-1,32), name="dequan_input")
-Dequan_output = DequanLayer(Dequan_input, feedback_bits)
-dequan = keras.Model(inputs=Dequan_input, outputs=Dequan_output, name='dequan')
-
 # decoder model
-Decoder_input = keras.Input(shape=(-1,32), name='decoder_input')
+Decoder_input = keras.Input(shape=(32), name='decoder_input')
 Decoder_output = Decoder(Decoder_input, feedback_bits)
 decoder = keras.Model(inputs=Decoder_input, outputs=Decoder_output, name="decoder")
 
 # autoencoder model
 autoencoder_input = keras.Input(shape=(img_height, img_width, img_channels), name="original_img")
 encoder_out = encoder(autoencoder_input)
-dequan_out  = dequan(encoder_out)
-decoder_out = decoder(dequan_out)
+decoder_out = decoder(encoder_out)
 autoencoder = keras.Model(inputs=autoencoder_input, outputs=decoder_out, name='autoencoder')
 autoencoder.compile(optimizer='adam', loss='mse')
 print(autoencoder.summary())
@@ -67,15 +61,15 @@ class CustomLearningRateScheduler(keras.callbacks.Callback):
         print("\nEpoch %04d Learning rate is %6.4f." % (epoch+1, scheduled_lr))
         
     def on_epoch_end(self, epoch, logs=None):
-        y_test = autoencoder.predict(x_test, batch_size=256)
+        y_test = autoencoder.predict(x_test, batch_size=128)
         print('\t NMSE=' + np.str(NMSE(x_test, y_test)))
 
 #lr scheduler
 def lr_scheduler(epoch, lr):
   if epoch < 20:
-    return 1e-3 * (1+(epoch/80))
+    return 0.25*1e-3 * (1+(epoch/20))
   else:
-    return (1.25e-3)*(1/1.9) *(1+0.9*tf.math.cos((epoch-20)*math.pi/180))
+    return 0.25*(2e-3)*(1/1.9) *(1+0.9*tf.math.cos((epoch-20)*math.pi/180))
 
 checkpoint_filepath = './ckpt/checkpoint'
 model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
@@ -88,7 +82,7 @@ model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
     save_best_only=True)
 
 # model training
-autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=200, callbacks=[model_checkpoint_callback,
+autoencoder.fit(x=x_train, y=x_train, batch_size=128, epochs=200, callbacks=[model_checkpoint_callback,
         CustomLearningRateScheduler(lr_scheduler)], verbose=1, validation_split=0.1)
 
 # model save
@@ -100,5 +94,5 @@ modelsave2 = './Modelsave/decoder.h5'
 decoder.save(modelsave2)
 
 # model test
-y_test = autoencoder.predict(x_test, batch_size=256)
+y_test = autoencoder.predict(x_test, batch_size=128)
 print('The NMSE is ' + np.str(NMSE(x_test, y_test)))
