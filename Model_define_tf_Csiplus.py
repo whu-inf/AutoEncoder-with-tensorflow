@@ -104,29 +104,21 @@ def Encoder(x,feedback_bits):
     x = layers.Dense(units=int(feedback_bits/B), activation='linear')(x)
     encoder_output = QuantizationLayer(B)(x)
     return encoder_output
-
-def DequanLayer(x,feedback_bits):
-    B = 4
-    decoder_input = DeuantizationLayer(B)(x)
-    x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(decoder_input)
-    dequan_output = x
-    
-    return dequan_output
-    
-def OffsetLayer(x,feedback_bits):
-    tmp = x
-    x = layers.Dense(int(feedback_bits/B))(tmp)
-    x = layers.LeakyReLU()(x)
-    x = layers.Dense(int(feedback_bits/B))(x)
-    x = layers.LeakyReLU()(x)
-    x = layers.Dense(int(feedback_bits/B))(x)
-    x_out = keras.layers.Add()([tmp, x])
-    return offset_output
   
 def Decoder(x,feedback_bits):
     B=4
     
-    x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(x)
+    dequan_out = DeuantizationLayer(B)(x)
+    
+    #OffsetLayer
+    x = layers.Dense(int(feedback_bits/B))(dequan_out)
+    x = layers.LeakyReLU()(x)
+    x = layers.Dense(int(feedback_bits/B))(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.Dense(int(feedback_bits/B))(x)
+    decoder_input = keras.layers.Add()([tmp, x])
+    
+    x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(decoder_input)
     x = layers.Dense(1024, activation='sigmoid')(x)
     x = layers.Reshape((16, 32, 2))(x)
     x = layers.Conv2D(2, 7, padding = 'SAME',activation = 'sigmoid')(x)
