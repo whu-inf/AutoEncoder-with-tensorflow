@@ -6,7 +6,7 @@ import math
 from tensorflow import keras
 from tensorflow.keras import layers
 from sklearn import model_selection
-from Model_define_tf_Csiplus import Encoder, Decoder, NMSE, DequanLayer ,OffsetLayer
+from Model_define_tf_Csiplus import Encoder, Decoder, NMSE
 
 # parameters
 feedback_bits = 128
@@ -14,6 +14,7 @@ img_height = 16
 img_width = 32
 img_channels = 2
 tf.random.set_seed(323)
+B = 4
 
 # Model construction
 # encoder model
@@ -21,21 +22,15 @@ Encoder_input = keras.Input(shape=(img_height, img_width, img_channels), name="e
 Encoder_output = Encoder(Encoder_input, feedback_bits)
 encoder = keras.Model(inputs=Encoder_input, outputs=Encoder_output, name='encoder')
 
-# dequan model
-Dequan_input = keras.Input(shape=(32), name="dequan_input")
-Dequan_output = DequanLayer(Dequan_input,feedback_bits)
-dequan = keras.Model(inputs=Dequan_input, outputs=Dequan_output, name='dequan')
-
 # decoder model
-Decoder_input = keras.Input(shape=(32), name='decoder_input')
+Decoder_input = keras.Input(shape=(feedback_bits/B,), name='decoder_input')
 Decoder_output = Decoder(Decoder_input, feedback_bits)
 decoder = keras.Model(inputs=Decoder_input, outputs=Decoder_output, name="decoder")
 
 # autoencoder model
 autoencoder_input = keras.Input(shape=(img_height, img_width, img_channels), name="original_img")
 encoder_out = encoder(autoencoder_input)
-dequan_out  = dequan(encoder_out)
-decoder_out = decoder(dequan_out)
+decoder_out = decoder(encoder_out)
 autoencoder = keras.Model(inputs=autoencoder_input, outputs=decoder_out, name='autoencoder')
 autoencoder.compile(optimizer='adam', loss='mse')
 print(autoencoder.summary())
