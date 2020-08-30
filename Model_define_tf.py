@@ -91,12 +91,12 @@ class DeuantizationLayer(tf.keras.layers.Layer):
         base_config['B'] = self.B
         return base_config
 
-conv_feature_size = 128
+conv_feature_size = 32
 
 def Encoder(x,feedback_bits):
     B=4
     with tf.compat.v1.variable_scope('Encoder'):
-        x = layers.Conv2D(conv_feature_size, 9, padding = 'SAME')(x)
+        x = layers.Conv2D(conv_feature_size, 7, padding = 'SAME')(x)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
         x = layers.Conv2D(conv_feature_size, 5, padding = 'SAME')(x)
@@ -107,25 +107,16 @@ def Encoder(x,feedback_bits):
         x = layers.PReLU()(x)
         x = layers.Flatten()(x)
         x = layers.Dense(units=int(feedback_bits/B), activation='sigmoid')(x)
-        encoder_output = QuantizationLayer(B)(x)
+        #encoder_output = QuantizationLayer(B)(x)
+        encoder_output = tf.quantization.fake_quant_with_min_max_args(
+                    x, min=0, max=1, num_bits=B, narrow_range=False, name=None
+                )
     return encoder_output
-
-def Encoder_baseline(x,feedback_bits):
-    B=4
-    with tf.compat.v1.variable_scope('Encoder'):
-        x = layers.Conv2D(2, 3, padding = 'SAME',activation="relu")(x)
-        x = layers.Conv2D(2, 3, padding = 'SAME',activation="relu")(x)
-        x = layers.Conv2D(2, 3, padding = 'SAME',activation="relu")(x)
-        x = layers.Flatten()(x)
-        x = layers.Dense(units=int(feedback_bits/B), activation='sigmoid')(x)
-        encoder_output = QuantizationLayer(B)(x)
-    return encoder_output
-
 
 def Decoder(x,feedback_bits):
     B=4
-    decoder_input = DeuantizationLayer(B)(x)
-    x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(decoder_input)
+    #decoder_input = DeuantizationLayer(B)(x)
+    x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(x)
     x = layers.Dense(1024, activation='linear')(x)
     x = layers.Reshape((16, 32, 2))(x)
     
@@ -134,7 +125,7 @@ def Decoder(x,feedback_bits):
     x_ini = layers.PReLU()(x)
     x_tmp = layers.PReLU()(x)
     
-    for i in range(2):
+    for i in range(3):
         x = layers.Conv2D(conv_feature_size, 5, padding = 'SAME')(x_ini)
         x = layers.BatchNormalization()(x)
         x = layers.PReLU()(x)
@@ -150,28 +141,9 @@ def Decoder(x,feedback_bits):
     x = layers.BatchNormalization()(x)
     x = layers.PReLU()(x)
     #x = layers.UpSampling2D(size=(4,4))(x)
-    decoder_output = layers.Conv2D(2, 9, padding = 'SAME', activation='sigmoid')(x)
+    decoder_output = layers.Conv2D(2, 7, padding = 'SAME', activation='sigmoid')(x)
 
     return decoder_output
-
-def Decoder_baseline(x,feedback_bits):
-    B=4
-    decoder_input = DeuantizationLayer(B)(x)
-    x = tf.keras.layers.Reshape((-1, int(feedback_bits/B)))(decoder_input)
-    x = layers.Dense(1024, activation='sigmoid')(x)
-    x_ini = layers.Reshape((16, 32, 2))(x)
-
-    for i in range(3):
-        x = layers.Conv2D(8, 3, padding = 'SAME',activation="relu")(x_ini)
-        x = layers.Conv2D(16,3, padding = 'SAME',activation="relu")(x)
-        x = layers.Conv2D(2, 3, padding = 'SAME',activation="relu")(x)
-        x_ini = keras.layers.Add()([x_ini, x])
-
-
-    decoder_output = layers.Conv2D(2, 3, padding = 'SAME',activation="sigmoid")(x_ini)
-
-    return decoder_output
-
 
 def NMSE(x, x_hat):
     x_real = np.reshape(x[:, :, :, 0], (len(x), -1))
