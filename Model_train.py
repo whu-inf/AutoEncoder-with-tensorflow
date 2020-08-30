@@ -22,7 +22,7 @@ Encoder_output = Encoder(Encoder_input, feedback_bits)
 encoder = keras.Model(inputs=Encoder_input, outputs=Encoder_output, name='encoder')
 
 # decoder model
-Decoder_input = keras.Input(shape=(32), name='decoder_input')
+Decoder_input = keras.Input(shape=(feedback_bits,), name='decoder_input')
 Decoder_output = Decoder(Decoder_input, feedback_bits)
 decoder = keras.Model(inputs=Decoder_input, outputs=Decoder_output, name="decoder")
 
@@ -61,15 +61,15 @@ class CustomLearningRateScheduler(keras.callbacks.Callback):
         print("\nEpoch %04d Learning rate is %6.4f." % (epoch+1, scheduled_lr))
         
     def on_epoch_end(self, epoch, logs=None):
-        y_test = autoencoder.predict(x_test, batch_size=128)
+        y_test = autoencoder.predict(x_test, batch_size=256)
         print('\t NMSE=' + np.str(NMSE(x_test, y_test)))
 
 #lr scheduler
 def lr_scheduler(epoch, lr):
   if epoch < 20:
-    return 0.25*1e-3 * (1+(epoch/20))
+    return 0.5*1e-3 * (1+(epoch/20))
   else:
-    return 0.25*(2e-3)*(1/1.9) *(1+0.9*tf.math.cos((epoch-20)*math.pi/180))
+    return 0.5*(2e-3)*(1/1.9) *(1+0.9*tf.math.cos((epoch-20)*math.pi/180))
 
 checkpoint_filepath = './ckpt/checkpoint'
 model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
@@ -82,7 +82,7 @@ model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
     save_best_only=True)
 
 # model training
-autoencoder.fit(x=x_train, y=x_train, batch_size=128, epochs=200, callbacks=[model_checkpoint_callback,
+autoencoder.fit(x=x_train, y=x_train, batch_size=256, epochs=200, callbacks=[model_checkpoint_callback,
         CustomLearningRateScheduler(lr_scheduler)], verbose=1, validation_split=0.1)
 
 # model save
@@ -94,5 +94,5 @@ modelsave2 = './Modelsave/decoder.h5'
 decoder.save(modelsave2)
 
 # model test
-y_test = autoencoder.predict(x_test, batch_size=128)
+y_test = autoencoder.predict(x_test, batch_size=256)
 print('The NMSE is ' + np.str(NMSE(x_test, y_test)))
